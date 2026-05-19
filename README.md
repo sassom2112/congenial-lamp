@@ -1,45 +1,100 @@
-# Exploratory Data Analysis and Preprocessing of the UNSW-NB15 Network Traffic Dataset
+# Network Intrusion Detection — UNSW-NB15
 
-## Project Overview
+Binary classification of network traffic as **normal** or **attack** across 2.54M real network flow records.
+Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability.
 
-This project involves the **Exploratory Data Analysis (EDA)** and **preprocessing** of the **UNSW-NB15 dataset**, which contains network traffic data for intrusion detection. The dataset includes features such as source and destination IP addresses, port numbers, protocols, and attack categories, which are used to detect potential network intrusions. The goal of this project is to clean, transform, and visualize the dataset to prepare it for machine learning models.
+**XGBoost: F1 = 0.9640 · ROC-AUC = 0.9997**
 
-## Dataset Information
+---
 
-The UNSW-NB15 dataset is publicly available and is widely used for network intrusion detection system (NIDS) research. The dataset contains labeled network traffic data, including both normal and attack traffic, making it useful for training and testing intrusion detection systems.
+## Results
 
-- **Dataset Source**: [UNSW-NB15 Dataset](https://www.unsw.edu.au/engineering/our-story/our-story)
-- **Data Format**: CSV files containing network traffic records.
+<p align="center">
+  <img src="figures/fig_roc_curves.png" width="48%"/>
+  <img src="figures/fig_model_comparison.png" width="48%"/>
+</p>
 
-## Key Steps in the Project
+| Model | F1-Score | ROC-AUC |
+|---|---|---|
+| Logistic Regression | see notebook | see notebook |
+| Random Forest | see notebook | see notebook |
+| **XGBoost** | **0.9640** | **0.9997** |
 
-1. **Data Loading**:
-   - The dataset is loaded from multiple CSV files containing network traffic data.
-   - Features include numerical and categorical variables such as source IP, destination IP, protocol, and attack category.
+---
 
-2. **Data Cleaning**:
-   - Non-numeric columns like IP addresses are handled or transformed.
-   - Missing values and incorrect data types are identified and addressed.
+## Explainability (SHAP)
 
-3. **Feature Engineering**:
-   - Categorical features such as attack categories are cleaned and prepared for machine learning models.
-   - Data is aggregated to ensure consistent categories and reduced complexity.
+XGBoost predictions are interpreted using SHAP TreeExplainer — identifying which features drive
+each classification decision globally and for individual flows.
 
-4. **Exploratory Data Analysis (EDA)**:
-   - Distribution of numerical and categorical features is visualized using histograms, count plots, and bar charts.
-   - Correlations among numerical features are visualized through a correlation heatmap.
-   - Attack categories and subcategories are analyzed to understand the frequency distribution of events.
+<p align="center">
+  <img src="figures/fig_shap_beeswarm.png" width="72%"/>
+</p>
 
-5. **Data Preprocessing**:
-   - Features are scaled and transformed where necessary to ensure consistency and improve the performance of machine learning models.
+<p align="center">
+  <img src="figures/fig_shap_waterfall_normal.png" width="48%"/>
+  <img src="figures/fig_shap_waterfall_attack.png" width="48%"/>
+</p>
 
+---
 
-## Next Steps
-1. Feature Engineering:
-    - Further process the data by encoding categorical variables or transforming features for machine learning models.
-2. Model Training:
-    - Train machine learning models like Random Forest, Logistic Regression, or XGBoost on the cleaned and preprocessed data.
-3. Evaluation:
-    - Evaluate the model performance using metrics like accuracy, precision, recall, and F1-score.
-4. Optimization:
-    - Tune model parameters and perform hyperparameter optimization to improve the results.
+## Dataset
+
+**UNSW-NB15** — captured at the UNSW Canberra Cyber Range. 9 attack categories across 2.54M labeled flows.
+
+<p align="center">
+  <img src="figures/fig_attack_categories.png" width="80%"/>
+</p>
+
+- Source: [Kaggle — mrwellsdavid/unsw-nb15](https://www.kaggle.com/datasets/mrwellsdavid/unsw-nb15)
+- 49 features: protocol stats, packet counts, timing, connection flags
+- Class split: 87.4% normal / 12.6% attack
+
+---
+
+## Notebooks
+
+| | Notebook | What it covers |
+|---|---|---|
+| 01 | [EDA & Preprocessing](01_eda_preprocessing.ipynb) | Data loading, attack category analysis, feature distributions, correlation heatmap |
+| 02 | [Modeling](02_modeling.ipynb) | sklearn Pipeline with imputation, LR / RF / XGBoost, ROC curves, confusion matrices |
+| 03 | [Explainability](03_explainability.ipynb) | SHAP TreeExplainer, beeswarm, waterfall plots, dependence plot |
+
+---
+
+## Setup
+
+```bash
+pip install -r requirements.txt
+```
+
+Configure Kaggle API — create `~/.kaggle/kaggle.json`:
+```json
+{"username": "your_username", "key": "your_api_key"}
+```
+Get your key at [kaggle.com/settings](https://www.kaggle.com/settings) → API → Create New Token, then:
+```bash
+chmod 600 ~/.kaggle/kaggle.json
+```
+
+Run notebooks in order:
+```
+01_eda_preprocessing  →  02_modeling  →  03_explainability
+```
+
+> Notebook 02 uses a stratified 500k-row sample by default. Set `SAMPLE_SIZE = None` for full 2.54M rows.
+
+---
+
+## Project Structure
+
+```
+.
+├── 01_eda_preprocessing.ipynb
+├── 02_modeling.ipynb
+├── 03_explainability.ipynb
+├── figures/                  # plots generated by the notebooks
+├── requirements.txt
+├── data/                     # gitignored — generated by notebook 01
+└── models/                   # gitignored — generated by notebook 02
+```
