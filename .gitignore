@@ -1,6 +1,7 @@
 # Data and model artifacts (too large for git)
 data/
 models/
+!models/feature_meta.json
 
 # Jupyter
 .ipynb_checkpoints/
