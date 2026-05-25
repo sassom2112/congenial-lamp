@@ -1,39 +1,52 @@
 # Network Intrusion Detection — UNSW-NB15
 
 Binary classification of network traffic as **normal** or **attack** across 2.54M real network flow records.
-Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability.
 
-**XGBoost: F1 = 0.9640 · ROC-AUC = 0.9997**
+Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability → **adversarial attack suite → adversarial training**.
+
+**XGBoost baseline: F1 = 0.9640 · ROC-AUC = 0.9997**
 
 ---
 
-## Results
+## Adversarial ML Extension (Notebooks 04–05)
+
+This project extends beyond classification into **adversarial robustness research**:
+
+1. A differentiable PyTorch MLP surrogate is trained on the same preprocessed features
+2. FGSM and PGD attacks are applied with **domain-aware constraint projection** — keeping adversarial flows physically plausible (no negative packet counts, no TTL > 255, no ports > 65535)
+3. Evasion rates are measured per MITRE ATT&CK attack category
+4. A **transfer attack** tests whether MLP adversarial examples evade the XGBoost classifier
+5. **Madry PGD adversarial training** hardens the detector and quantifies the accuracy-robustness tradeoff
+
+Most published FGSM work on intrusion detection ignores domain constraints, producing physically impossible network flows. The constraint projection step here is what separates a research exercise from an operationally meaningful threat model.
 
 <p align="center">
-  <img src="figures/fig_roc_curves.png" width="48%"/>
-  <img src="figures/fig_model_comparison.png" width="48%"/>
+  <img src="data/processed/fig_robustness_curves.png" width="90%"/>
+</p>
+
+---
+
+## Classification Results
+
+<p align="center">
+  <img src="data/processed/fig_roc_curves.png" width="48%"/>
+  <img src="data/processed/fig_model_comparison.png" width="48%"/>
 </p>
 
 | Model | F1-Score | ROC-AUC |
 |---|---|---|
-| Logistic Regression | see notebook | see notebook |
-| Random Forest | see notebook | see notebook |
+| Logistic Regression | 0.9518 | 0.9993 |
+| Random Forest | 0.9766 | 0.9998 |
 | **XGBoost** | **0.9640** | **0.9997** |
 
 ---
 
 ## Explainability (SHAP)
 
-XGBoost predictions are interpreted using SHAP TreeExplainer — identifying which features drive
-each classification decision globally and for individual flows.
+XGBoost predictions interpreted via SHAP TreeExplainer — the same top features identified by SHAP are the primary targets of the adversarial attacks in notebooks 04–05.
 
 <p align="center">
-  <img src="figures/fig_shap_beeswarm.png" width="72%"/>
-</p>
-
-<p align="center">
-  <img src="figures/fig_shap_waterfall_normal.png" width="48%"/>
-  <img src="figures/fig_shap_waterfall_attack.png" width="48%"/>
+  <img src="data/processed/fig_shap_beeswarm.png" width="72%"/>
 </p>
 
 ---
@@ -43,12 +56,13 @@ each classification decision globally and for individual flows.
 **UNSW-NB15** — captured at the UNSW Canberra Cyber Range. 9 attack categories across 2.54M labeled flows.
 
 <p align="center">
-  <img src="figures/fig_attack_categories.png" width="80%"/>
+  <img src="data/processed/fig_attack_categories.png" width="80%"/>
 </p>
 
 - Source: [Kaggle — mrwellsdavid/unsw-nb15](https://www.kaggle.com/datasets/mrwellsdavid/unsw-nb15)
 - 49 features: protocol stats, packet counts, timing, connection flags
 - Class split: 87.4% normal / 12.6% attack
+- Attack categories: analysis, backdoors, DoS, exploits, fuzzers, generic, reconnaissance, shellcode, worms
 
 ---
 
@@ -57,8 +71,10 @@ each classification decision globally and for individual flows.
 | | Notebook | What it covers |
 |---|---|---|
 | 01 | [EDA & Preprocessing](01_eda_preprocessing.ipynb) | Data loading, attack category analysis, feature distributions, correlation heatmap |
-| 02 | [Modeling](02_modeling.ipynb) | sklearn Pipeline with imputation, LR / RF / XGBoost, ROC curves, confusion matrices |
-| 03 | [Explainability](03_explainability.ipynb) | SHAP TreeExplainer, beeswarm, waterfall plots, dependence plot |
+| 02 | [Modeling](02_modeling.ipynb) | sklearn Pipeline, LR / RF / XGBoost, ROC curves, confusion matrices |
+| 03 | [Explainability](03_explainability.ipynb) | SHAP TreeExplainer, beeswarm, waterfall, dependence plots |
+| **04** | [**Adversarial Attacks**](04_adversarial_attacks.ipynb) | **MLP surrogate, FGSM + PGD with constraint projection, per-category evasion, transfer attack** |
+| **05** | [**Adversarial Training**](05_adversarial_training.ipynb) | **Madry PGD hardening, robustness curves, clean vs. hardened comparison** |
 
 ---
 
@@ -79,7 +95,7 @@ chmod 600 ~/.kaggle/kaggle.json
 
 Run notebooks in order:
 ```
-01_eda_preprocessing  →  02_modeling  →  03_explainability
+01_eda_preprocessing  →  02_modeling  →  03_explainability  →  04_adversarial_attacks  →  05_adversarial_training
 ```
 
 > Notebook 02 uses a stratified 500k-row sample by default. Set `SAMPLE_SIZE = None` for full 2.54M rows.
@@ -93,8 +109,19 @@ Run notebooks in order:
 ├── 01_eda_preprocessing.ipynb
 ├── 02_modeling.ipynb
 ├── 03_explainability.ipynb
-├── figures/                  # plots generated by the notebooks
-├── requirements.txt
-├── data/                     # gitignored — generated by notebook 01
-└── models/                   # gitignored — generated by notebook 02
+├── 04_adversarial_attacks.ipynb     ← adversarial attack suite
+├── 05_adversarial_training.ipynb    ← adversarial training / hardening
+├── src/
+│   ├── neural_detector.py           ← PyTorch MLP, training loop, save/load
+│   ├── attacks.py                   ← FGSM, PGD, constraint projection
+│   └── robustness.py                ← evaluation metrics, plotting
+├── data/
+│   └── processed/                   ← generated by notebook 01/02
+├── models/
+│   ├── xgb_model.joblib             ← trained XGBoost pipeline
+│   ├── mlp_surrogate.pt             ← generated by notebook 04
+│   └── mlp_hardened.pt              ← generated by notebook 05
+├── generate_notebooks.py            ← regenerates notebooks 01–03
+├── generate_adversarial_notebooks.py ← regenerates notebooks 04–05
+└── requirements.txt
 ```
