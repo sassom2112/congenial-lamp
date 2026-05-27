@@ -17,7 +17,7 @@ def md(src: str) -> nbf.NotebookNode:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# NOTEBOOK 04 — Adversarial Attacks on the Intrusion Detector
+# NOTEBOOK 04 — Red Team Attacks on the Network Intrusion Detector
 # ═══════════════════════════════════════════════════════════════════════════════
 
 nb04 = nbf.v4.new_notebook()
@@ -28,17 +28,17 @@ nb04.metadata["kernelspec"] = {
 nb04.cells = [
 
 md("""
-# 04 — Adversarial Attacks on the Network Intrusion Detector
+# 04 — Red Team Attacks on the Network Intrusion Detector
 
-**Objective:** Demonstrate that the production XGBoost classifier (F1=0.9640) and a
-differentiable MLP surrogate are vulnerable to adversarial network flows, then quantify
-that vulnerability per MITRE ATT&CK attack category.
+**Objective:** Execute an automated red team against the production XGBoost classifier
+(F1=0.9640) using a differentiable MLP surrogate and physically plausible adversarial
+network flows. Quantify real attack success and transferability across model families.
 
 **Pipeline:**
 1. Train a PyTorch MLP surrogate on the same preprocessed UNSW-NB15 features
-2. Apply FGSM and PGD with **domain constraint projection** (physically plausible flows)
-3. Measure evasion rates per attack category → map to MITRE ATT&CK
-4. Execute a transfer attack: MLP adversarial examples evaluated on the XGBoost classifier
+2. Execute a red-agent attack pipeline using FGSM and PGD with **domain constraint projection**
+3. Measure evasion rates per MITRE ATT&CK attack category
+4. Execute a black-box transfer attack: MLP adversarial examples evaluated on the XGBoost classifier
 
 **Why constraint projection matters:** Standard FGSM applied to tabular network features
 produces flows with negative packet counts, fractional TTLs, and port numbers > 65535.

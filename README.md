@@ -1,24 +1,26 @@
-# Network Intrusion Detection — UNSW-NB15
+# Network Intrusion Detection — Real IDS Red Teaming & Adversarial Hardening
+
+Real security evaluation of a deployed IDS: apply automated red teaming to the UNSW-NB15 dataset, attack a high-performance XGBoost detector with physically plausible adversarial flows, and harden the system with adversarial training.
 
 Binary classification of network traffic as **normal** or **attack** across 2.54M real network flow records.
 
-Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability → **adversarial attack suite → adversarial training**.
+Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability → **automated red teaming → adversarial hardening**.
 
 **XGBoost baseline: F1 = 0.9640 · ROC-AUC = 0.9997**
 
 ---
 
-## Adversarial ML Extension (Notebooks 04–05)
+## Automated Red Teaming & Adversarial Hardening (Notebooks 04–05)
 
-This project extends beyond classification into **adversarial robustness research**:
+This project extends beyond classification into **operational adversarial ML research**:
 
 1. A differentiable PyTorch MLP surrogate (F1 = 0.9519) is trained on the same preprocessed features
-2. FGSM and PGD attacks are applied with **domain-aware constraint projection** — keeping adversarial flows physically plausible (no negative packet counts, no TTL > 255, no ports > 65535)
+2. A red agent applies FGSM and PGD with **domain-aware constraint projection** — keeping adversarial flows physically plausible (no negative packet counts, TTL ∈ [0,255], port numbers ∈ [0,65535])
 3. Evasion rates are measured per MITRE ATT&CK attack category
-4. A **transfer attack** shows MLP adversarial examples evade the XGBoost classifier at **16–18%** — a 15x increase in false negatives over the clean baseline
-5. **Madry PGD adversarial training** hardens the detector with no clean-accuracy cost
+4. A **black-box transfer attack** shows MLP adversarial examples evade the XGBoost classifier at **16–18%** with no access to target gradients — a 15x increase in false negatives over the clean baseline
+5. **Madry PGD adversarial training** hardens the classifier with no clean-accuracy cost
 
-Most published FGSM work on intrusion detection ignores domain constraints, producing physically impossible network flows. The constraint projection step is what separates a research exercise from an operationally meaningful threat model.
+Most published FGSM work on intrusion detection ignores domain constraints, producing physically impossible network flows. This project makes the threat model operationally meaningful by enforcing practical packet, TTL, and port constraints.
 
 ### Key Result: Standard Model Collapses — Hardened Model Holds
 
@@ -88,8 +90,8 @@ XGBoost predictions interpreted via SHAP TreeExplainer — the same top features
 | 01 | [EDA & Preprocessing](01_eda_preprocessing.ipynb) | Data loading, attack category analysis, feature distributions, correlation heatmap |
 | 02 | [Modeling](02_modeling.ipynb) | sklearn Pipeline, LR / RF / XGBoost, ROC curves, confusion matrices |
 | 03 | [Explainability](03_explainability.ipynb) | SHAP TreeExplainer, beeswarm, waterfall, dependence plots |
-| **04** | [**Adversarial Attacks**](04_adversarial_attacks.ipynb) | **MLP surrogate, FGSM + PGD with constraint projection, per-category evasion, transfer attack** |
-| **05** | [**Adversarial Training**](05_adversarial_training.ipynb) | **Madry PGD hardening, robustness curves, clean vs. hardened comparison** |
+| **04** | [**Adversarial Attacks**](04_adversarial_attacks.ipynb) | **Red Team attack suite: MLP surrogate, FGSM + PGD with domain constraint projection, per-category evasion, black-box transfer** |
+| **05** | [**Adversarial Training**](05_adversarial_training.ipynb) | **Adversarial hardening: Madry PGD, robustness curves, clean vs hardened comparison** |
 
 ---
 
