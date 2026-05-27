@@ -6,6 +6,12 @@ Binary classification of network traffic as **normal** or **attack** across 2.54
 
 Full ML lifecycle: EDA → sklearn Pipeline → XGBoost → SHAP explainability → **automated red teaming → adversarial hardening**.
 
+<p align="center">
+  <img src="figures/thru-line.png" width="85%" alt="Adversarial IDS research workflow diagram"/>
+</p>
+
+*Research workflow: build a real IDS, map the attack surface with SHAP, red-team it with a surrogate, enforce domain constraints, measure transfer, and harden the model.*
+
 **XGBoost baseline: F1 = 0.9640 · ROC-AUC = 0.9997**
 
 ---
